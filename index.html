@@ -1,9 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TabelaMágica ✨</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@400;600;700&family=Dancing+Script:wght@700&family=Pacifico&family=Indie+Flower&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -526,6 +528,7 @@
     <button class="btn btn-secondary" onclick="undoMerge()">🔓 Desfazer Mescla</button>
     <button class="btn btn-dark" onclick="printTable()">📸 Print</button>
     <button class="btn btn-success" onclick="savePDF()">💾 Salvar PDF</button>
+    <button class="btn btn-primary" onclick="saveJPG()">🖼️ Salvar JPG</button>
     <button class="btn btn-danger" onclick="resetTable()">🔄 Restaurar</button>
     <button class="btn btn-secondary" onclick="copyCSV()">📋 Copiar CSV</button>
   </div>
@@ -540,7 +543,7 @@
 <script>
 // ===== THEMES =====
 const themes = [
-  { name:'💜 Princess', bg:'#FFF0F8', cell:'#fff5fc', border:'#e040a0', text:'#4a1a4a', title:'#9c27b0', hbg:'#e040a0', htxt:'#fff', alt:'#fce4f5', sign:'#e040a0' },
+  { name:'💜 LaLa', bg:'#FFF0F8', cell:'#fff5fc', border:'#e040a0', text:'#4a1a4a', title:'#9c27b0', hbg:'#e040a0', htxt:'#fff', alt:'#fce4f5', sign:'#e040a0' },
   { name:'🖤 P&B', bg:'#f5f5f5', cell:'#ffffff', border:'#222', text:'#111', title:'#111', hbg:'#222', htxt:'#fff', alt:'#e8e8e8', sign:'#555' },
   { name:'🌊 Ocean', bg:'#e8f4ff', cell:'#f0f8ff', border:'#1a6db5', text:'#0d3a6e', title:'#0d3a6e', hbg:'#1a6db5', htxt:'#fff', alt:'#cce4ff', sign:'#1a6db5' },
   { name:'🌿 Verde', bg:'#eafaf1', cell:'#f0fff5', border:'#27ae60', text:'#1a4a2e', title:'#1a7a3e', hbg:'#27ae60', htxt:'#fff', alt:'#d5f5e3', sign:'#27ae60' },
@@ -752,6 +755,102 @@ function savePDF() {
   toast('Use Ctrl+P → Salvar como PDF 💾');
   setTimeout(() => window.print(), 800);
 }
+
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function saveJPG() {
+  toast('Gerando imagem... 🖼️');
+
+  const wrapper = document.getElementById('table-wrapper');
+  const bgColor = getCSSVar('--bg-page') || '#ffffff';
+
+  // Clone the wrapper into a fully inline-styled offscreen div
+  const clone = wrapper.cloneNode(true);
+  clone.style.position = 'fixed';
+  clone.style.top = '-9999px';
+  clone.style.left = '-9999px';
+  clone.style.width = wrapper.offsetWidth + 'px';
+  clone.style.background = bgColor;
+  clone.style.padding = '28px 22px 22px';
+  clone.style.borderRadius = '18px';
+  clone.style.fontFamily = getCSSVar('--font-family') || 'sans-serif';
+
+  // Resolve CSS vars inline on all cells
+  const table = clone.querySelector('table');
+  if (table) {
+    table.style.borderCollapse = 'separate';
+    table.style.borderSpacing = '0';
+    table.style.width = '100%';
+    table.style.border = getCSSVar('--border-width') + ' ' + getCSSVar('--border-style') + ' ' + getCSSVar('--border');
+    table.style.borderRadius = getCSSVar('--border-radius');
+    table.style.overflow = 'hidden';
+    table.style.fontFamily = getCSSVar('--font-family') || 'sans-serif';
+  }
+  clone.querySelectorAll('th').forEach(th => {
+    th.style.background = getCSSVar('--header-bg');
+    th.style.color = getCSSVar('--header-text');
+    th.style.padding = '10px 14px';
+    th.style.fontWeight = '800';
+    th.style.borderRight = getCSSVar('--border-width') + ' ' + getCSSVar('--border-style') + ' ' + getCSSVar('--divider');
+    th.style.textAlign = 'center';
+  });
+
+  const rows = clone.querySelectorAll('tbody tr');
+  rows.forEach((tr, i) => {
+    const isAlt = tr.classList.contains('alt-row');
+    tr.querySelectorAll('td').forEach(td => {
+      td.style.background = isAlt ? getCSSVar('--row-alt') : getCSSVar('--cell-bg');
+      td.style.color = getCSSVar('--text');
+      td.style.padding = '9px 13px';
+      td.style.borderRight = getCSSVar('--border-width') + ' ' + getCSSVar('--border-style') + ' ' + getCSSVar('--divider');
+      td.style.borderTop = getCSSVar('--border-width') + ' ' + getCSSVar('--border-style') + ' ' + getCSSVar('--divider');
+      td.style.textAlign = 'center';
+    });
+  });
+
+  const title = clone.querySelector('#table-title');
+  if (title) {
+    title.style.color = getCSSVar('--title-color');
+    title.style.textAlign = 'center';
+    title.style.fontSize = '1.6rem';
+    title.style.fontWeight = '900';
+    title.style.marginBottom = '14px';
+    title.style.fontFamily = getCSSVar('--font-family') || 'sans-serif';
+  }
+  const sign = clone.querySelector('#table-signature');
+  if (sign) {
+    sign.style.color = getCSSVar('--sign-color');
+    sign.style.textAlign = 'right';
+    sign.style.fontSize = '.88rem';
+    sign.style.fontWeight = '700';
+    sign.style.marginTop = '10px';
+    sign.style.fontFamily = getCSSVar('--font-family') || 'sans-serif';
+  }
+
+  document.body.appendChild(clone);
+
+  html2canvas(clone, {
+    backgroundColor: bgColor,
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+  }).then(canvas => {
+    document.body.removeChild(clone);
+    const link = document.createElement('a');
+    link.download = 'minha-tabela.jpg';
+    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    link.click();
+    toast('JPG salvo! 🎉');
+  }).catch(err => {
+    document.body.removeChild(clone);
+    console.error(err);
+    toast('Erro ao gerar imagem 😢');
+  });
+}
+
 
 function copyCSV() {
   let csv = '';
